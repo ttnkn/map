@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+    <link rel="stylesheet" href="https://cdn.rawgit.com/openlayers/openlayers.github.io/master/en/v6.0.1/css/ol.css" />
+    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" />
+    <title>PAX Counter</title>
+    <style type="text/css">
+      #map { position: absolute; top: 0px; bottom: 0px; left: 0px; right: 0px; width: 100%; height:100%}
+
+      .ol-popup {
+            font-family: 'Lucida Grande', Verdana, Geneva, Lucida, Arial, Helvetica, sans-serif !important;
+            font-size: 12px;
+            position: absolute;
+            background-color: white;
+            -webkit-filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.2));
+            filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.2));
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #cccccc;
+            bottom: 12px;
+            left: -50px;
+            min-width: 100px;
+        }
+
+        .ol-popup:after,
+        .ol-popup:before {
+            top: 100%;
+            border: solid transparent;
+            content: " ";
+            height: 0;
+            width: 0;
+            position: absolute;
+            pointer-events: none;
+        }
+
+        .ol-popup:after {
+            border-top-color: white;
+            border-width: 10px;
+            left: 48px;
+            margin-left: -10px;
+        }
+
+        .ol-popup:before {
+            border-top-color: #cccccc;
+            border-width: 11px;
+            left: 48px;
+            margin-left: -11px;
+        }
+
+        .ol-popup-closer {
+            text-decoration: none;
+            position: absolute;
+            top: 2px;
+            right: 8px;
+        }
+
+        .ol-popup-closer:after {
+            content: "✖";
+            color: #c3c3c3;
+        }
+    </style>
+    <script type="text/javascript" src="https://cdn.rawgit.com/openlayers/openlayers.github.io/master/en/v6.0.1/build/ol.js"></script>
+    <script type="text/javascript" src="http://code.jquery.com/jquery-2.1.1.min.js"></script>
+    <script type="text/javascript" src="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+    <script type="text/javascript">
+
+	function ISODateString(d){
+		function pad(n){return n<10 ? '0'+n : n}
+		return d.getUTCFullYear()+'-'
+		+ pad(d.getUTCMonth()+1)+'-'
+		+ pad(d.getUTCDate())+'T'
+		+ pad(d.getUTCHours())+':'
+		+ pad(d.getUTCMinutes())+':'
+		+ pad(d.getUTCSeconds())+'Z'
+	}
+	var now = new Date();
+	var yesterday = new Date();
+
+	function getUrlVars() {
+		var vars = {};
+		var parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m,key,value) {
+			vars[key] = value;
+		});
+		return vars;
+	}
+	
+	function getUrlParam(parameter, defaultvalue){
+		var urlparameter = defaultvalue;
+		if(window.location.href.indexOf(parameter) > -1){
+			urlparameter = getUrlVars()[parameter];
+			}
+		return urlparameter;
+	}
+
+//	var toDate   = getUrlParam()["toDate",ISODateString(now)];
+//	var fromDate = getUrlParam()["fromDate",ISODateString(yesterday)];
+
+	$(function(){
+        $('.sidebar-left .slide-submenu').on('click',function() {
+          var thisEl = $(this);
+          thisEl.closest('.sidebar-body').fadeOut('slide',function(){
+            $('.mini-submenu-left').fadeIn();
+/*             applyMargins(); */
+          });
+        });
+
+        $('.mini-submenu-left').on('click',function() {
+          var thisEl = $(this);
+          $('.sidebar-left .sidebar-body').toggle('slide');
+          thisEl.hide();
+/*           applyMargins(); */
+        });
+
+/*         $(window).on("resize", applyMargins); */
+
+        var style = new ol.style.Style({
+            fill: new ol.style.Fill({
+              color: 'rgba(255, 255, 255, 0.6)'
+            }),
+            stroke: new ol.style.Stroke({
+              color: '#319FD3',
+              width: 5
+            }),
+            text: new ol.style.Text({
+              font: '12px Calibri,sans-serif',
+              fill: new ol.style.Fill({
+                color: '#000'
+              }),
+              stroke: new ol.style.Stroke({
+                color: '#fff',
+                width: 3
+              })
+            })
+        });
+
+		var markerSource = new ol.source.Vector();
+		$.getJSON('https://api.opensensemap.org/boxes/data?boxId=5db5d4f89b884c001a14a334&phenomenon=Wifi&format=json&download=false', function(data) {
+			$.each(data, function(key, val) {
+				var newMarker = new ol.Feature({
+					sensorId: this.sensorId,
+					createdAt: this.createdAt,
+					value: this.value,
+					geometry: new ol.geom.Point(ol.proj.transform([this.lon, this.lat], 'EPSG:4326', 'EPSG:3857')),
+//                    style:
+				});
+				markerSource.addFeature(newMarker);
+			});
+		});
+		
+        var map = new ol.Map({
+            target: 'map',
+            layers: [
+				new ol.layer.Tile({
+					source: new ol.source.XYZ({
+					    url: 'http://tile.memomaps.de/tilegen/{z}/{x}/{y}.png '
+					})
+				}),
+				new ol.layer.Vector({
+					source: markerSource
+				})
+			],
+            controls: ol.control.defaults({ zoom:false, attribution: true }),
+            view: new ol.View({
+				center: ol.proj.fromLonLat([9.173,47.672]),
+				zoom: 15,
+            })
+        });
+
+		// popup
+		var container = document.getElementById('popup');
+		var content = document.getElementById('popup-content');
+		var closer = document.getElementById('popup-closer');
+
+		var overlay = new ol.Overlay({
+			element: container,
+			autoPan: true,
+			autoPanAnimation: {
+				duration: 250
+			}
+		});
+		map.addOverlay(overlay);
+
+		closer.onclick = function() {
+			overlay.setPosition(undefined);
+			closer.blur();
+			return false;
+		};
+
+		map.on('singleclick', function (event) {
+			if (map.hasFeatureAtPixel(event.pixel) === true) {
+				var coordinate = event.coordinate;
+				var pax = map.getFeaturesAtPixel(event.pixel);
+				content.innerHTML = '<b>PAX: ' + pax[0].values_.value + '</b><br />createdAt: '+ pax[0].values_.createdAt;
+				overlay.setPosition(coordinate);
+			} else {
+				overlay.setPosition(undefined);
+				closer.blur();
+			}
+		});
+
+	});
+	
+
+//content.innerHTML = '<b>Hello world!</b><br />I am a popup.';
+//overlay.setPosition(ol.proj.fromLonLat([4.35247, 50.84673]));
+ 
+	// https://api.opensensemap.org/boxes/5db5d4f89b884c001a14a334/sensors -- last measurment
+	// https://api.opensensemap.org/boxes/data?boxId=5db5d4f89b884c001a14a334&phenomenon=Wifi&format=json&download=false
+	// https://api.opensensemap.org/boxes/data?boxId=5cb41fcfc9e9ab001ac38b99&phenomenon=Temperatur&format=json&download=false
+
+	// https://github.com/webgeodatavore/ol3-extras-demos/blob/master/tsv/static/js/demo-tsv.js
+	// https://openstreetmap.be/en/projects/howto/openlayers.html
+	
+	
+	</script>
+  </head>
+
+	<body>
+		<div class="container">
+			<div id="map"></div>
+			<div id="popup" class="ol-popup" >
+				<a href="#" id="popup-closer" class="ol-popup-closer"></a>
+				<div id="popup-content"></div>
+			</div>
+		</div>
+	</body>
+</html>
