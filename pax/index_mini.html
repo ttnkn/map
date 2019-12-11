@@ -14,50 +14,9 @@
     <script type="text/javascript" src="https://cdn.rawgit.com/openlayers/openlayers.github.io/master/en/v6.0.1/build/ol.js"></script>
     <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
     <script type="text/javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
-    <script src="https://mapbox.github.io/geojson-vt/geojson-vt-dev.js"></script>
     <script type="text/javascript">
 
 	$(function(){
-
-// Converts geojson-vt data to GeoJSON
-var replacer = function(key, value) {
-  if (value.geometry) {
-    var type;
-    var rawType = value.type;
-    var geometry = value.geometry;
-
-    if (rawType === 1) {
-      type = 'MultiPoint';
-      if (geometry.length == 1) {
-        type = 'Point';
-        geometry = geometry[0];
-      }
-    } else if (rawType === 2) {
-      type = 'MultiLineString';
-      if (geometry.length == 1) {
-        type = 'LineString';
-        geometry = geometry[0];
-      }
-    } else if (rawType === 3) {
-      type = 'Polygon';
-      if (geometry.length > 1) {
-        type = 'MultiPolygon';
-        geometry = [geometry];
-      }
-    }
-
-    return {
-      'type': 'Feature',
-      'geometry': {
-        'type': type,
-        'coordinates': geometry
-      },
-      'properties': value.tags
-    };
-  } else {
-    return value;
-  }
-};
 
 		var markerSource = new ol.source.Vector();
 		$.getJSON('https://api.opensensemap.org/boxes/data?boxId=5db5d4f89b884c001a14a334&phenomenon=Wifi&format=json&download=false', function(data) {
@@ -100,41 +59,6 @@ var replacer = function(key, value) {
 				zoom: 15,
             })
         });
-
-
-
-var url = 'https://api.opensensemap.org/statistics/idw?bbox=9.118815,47.653129,9.228427,47.698786&phenomenon=Wifi&exposure=mobile&columns=boxId,lat,lon&gridType=hex&cellWidth=1';
-fetch(url).then(function(response) {
-  return response.json();
-}).then(function(json) {
-  var tileIndex = geojsonvt(json.data.featureCollection, {
-    extent: 4096,
-    debug: 1
-  });
-  var vectorSource = new ol.source.VectorTile({
-    format: new ol.format.GeoJSON({
-      // Data returned from geojson-vt is in tile pixel units
-      dataProjection: new ol.proj.Projection({
-        code: 'TILE_PIXELS',
-        units: 'tile-pixels',
-        extent: [0, 0, 4096, 4096]
-      })
-    }),
-    tileUrlFunction: function(tileCoord) {
-      var data = tileIndex.getTile(tileCoord[0], tileCoord[1], tileCoord[2]);
-      var geojson = JSON.stringify({
-        type: 'FeatureCollection',
-        features: data ? data.features : []
-      }, replacer);
-      return 'data:application/json;charset=UTF-8,' + geojson;
-    }
-  });
-  var vectorLayer = new ol.layer.VectorTile({
-    source: vectorSource
-  });
-  map.addLayer(vectorLayer);
-});
-
 
 	});
 
