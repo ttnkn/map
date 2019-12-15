@@ -1,153 +1,29 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="utf-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-    <link rel="stylesheet" href="https://cdn.rawgit.com/openlayers/openlayers.github.io/master/en/v6.0.1/css/ol.css" />
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" />
-    <title>PAX Counter</title>
-    <style type="text/css">
-      #map { position: absolute; top: 0px; bottom: 0px; left: 0px; right: 0px; width: 100%; height:100%}
-    </style>
-    <script type="text/javascript" src="https://cdn.rawgit.com/openlayers/openlayers.github.io/master/en/v6.0.1/build/ol.js"></script>
-    <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
-    <script type="text/javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
-    <script src="https://mapbox.github.io/geojson-vt/geojson-vt-dev.js"></script>
-    <script type="text/javascript">
 
-	$(function(){
+    <head>
+        <meta charset="utf-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+        <link rel="stylesheet" href="https://cdn.rawgit.com/openlayers/openlayers.github.io/master/en/v6.0.1/css/ol.css" />
+        <title>PAX Counter</title>
+        <style type="text/css">
+            #map {
+                position: absolute;
+                top: 0px;
+                bottom: 0px;
+                left: 0px;
+                right: 0px;
+                width: 100%;
+                height: 100%
+            }
+        </style>
+        <script type="text/javascript" src="https://cdn.rawgit.com/openlayers/openlayers.github.io/master/en/v6.0.1/build/ol.js"></script>
+    </head>
 
-// Converts geojson-vt data to GeoJSON
-var replacer = function(key, value) {
-  if (value.geometry) {
-    var type;
-    var rawType = value.type;
-    var geometry = value.geometry;
+    <body>
+        <div id="map" class="map"></div>
+        <script src="index.js"></script>
+    </body>
 
-    if (rawType === 1) {
-      type = 'MultiPoint';
-      if (geometry.length == 1) {
-        type = 'Point';
-        geometry = geometry[0];
-      }
-    } else if (rawType === 2) {
-      type = 'MultiLineString';
-      if (geometry.length == 1) {
-        type = 'LineString';
-        geometry = geometry[0];
-      }
-    } else if (rawType === 3) {
-      type = 'Polygon';
-      if (geometry.length > 1) {
-        type = 'MultiPolygon';
-        geometry = [geometry];
-      }
-    }
-
-    return {
-      'type': 'Feature',
-      'geometry': {
-        'type': type,
-        'coordinates': geometry
-      },
-      'properties': value.tags
-    };
-  } else {
-    return value;
-  }
-};
-
-		var markerSource = new ol.source.Vector();
-		$.getJSON('https://api.opensensemap.org/boxes/data?boxId=5db5d4f89b884c001a14a334&phenomenon=Wifi&format=json&download=false', function(data) {
-			$.each(data, function(key, val) {
-				var poi = new ol.geom.Circle(ol.proj.transform([this.lon, this.lat], 'EPSG:4326', 'EPSG:3857'),3*this.value);
-				
-				var style = new ol.style.Style({
-					fill: new ol.style.Fill({
-					  color: 'rgba(10,10,200, 0.6)'
-					})
-				});
-			
-				var newMarker = new ol.Feature({
-					sensorId: this.sensorId,
-					createdAt: this.createdAt,
-					value: this.value,
-					geometry: poi
-				});
-				newMarker.setStyle(style);
-				markerSource.addFeature(newMarker);
-			});
-		});
-		
-        var map = new ol.Map({
-            target: 'map',
-            layers: [
-				new ol.layer.Tile({
-					source: new ol.source.XYZ({
-					    url: 'http://tile.memomaps.de/tilegen/{z}/{x}/{y}.png ',
-						attributions:'Tiles (c) <a href="memomaps.de">MeMoMaps</a>'
-					})
-				}),
-				new ol.layer.Vector({
-					source: markerSource
-				})
-			],
-            controls: ol.control.defaults({ zoom:true, attribution: true }),
-            view: new ol.View({
-				center: ol.proj.fromLonLat([9.173,47.672]),
-				zoom: 15,
-            })
-        });
-
-
-
-var url = 'https://api.opensensemap.org/statistics/idw?bbox=9.118815,47.653129,9.228427,47.698786&phenomenon=Wifi&exposure=mobile&columns=boxId,lat,lon&gridType=hex&cellWidth=1';
-fetch(url).then(function(response) {
-  return response.json();
-}).then(function(json) {
-  var tileIndex = geojsonvt(json.data.featureCollection, {
-    extent: 4096,
-    debug: 1
-  });
-  var vectorSource = new ol.source.VectorTile({
-    format: new ol.format.GeoJSON({
-      // Data returned from geojson-vt is in tile pixel units
-      dataProjection: new ol.proj.Projection({
-        code: 'TILE_PIXELS',
-        units: 'tile-pixels',
-        extent: [0, 0, 4096, 4096]
-      })
-    }),
-    tileUrlFunction: function(tileCoord) {
-      var data = tileIndex.getTile(tileCoord[0], tileCoord[1], tileCoord[2]);
-      var geojson = JSON.stringify({
-        type: 'FeatureCollection',
-        features: data ? data.features : []
-      }, replacer);
-      return 'data:application/json;charset=UTF-8,' + geojson;
-    }
-  });
-  var vectorLayer = new ol.layer.VectorTile({
-    source: vectorSource
-  });
-  map.addLayer(vectorLayer);
-});
-
-
-	});
-
-	</script>
-	</head>
-
-	<body>
-		<div class="container">
-			<div id="map"></div>
-			<div id="popup" class="ol-popup" >
-				<a href="#" id="popup-closer" class="ol-popup-closer"></a>
-				<div id="popup-content"></div>
-			</div>
-		</div>
-	</body>
 </html>
