@@ -5,8 +5,8 @@ var GeoStyle = {
 //            anchorXUnits: 'fraction',
 //            anchorYUnits: 'pixels',
             src: '../img/bike.png',
-//            scale: 0.5,
-            crossOrigin: 'anonymous'
+            scale: 0.08,
+//            crossOrigin: 'anonymous'
         })
     }),
     'Circle': new ol.style.Circle({
@@ -50,8 +50,8 @@ var map = new ol.Map({
     view: new ol.View({
         center: ol.proj.fromLonLat([9.173, 47.672]),
         zoom: 15,
-//        MaxZoom: 14,
-//        MinZoom: 10
+        maxZoom: 17,
+        minZoom: 13
     })
 });
 
