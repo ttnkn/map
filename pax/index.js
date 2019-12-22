@@ -63,28 +63,32 @@ https://overpass-turbo.eu/
 	out body geom;
 */
 
-/*
-var cityFeature = new ol.Feature();
+var bbox;
+
+var featuresCity = new ol.Feature();
 var url_city = 'https://overpass-api.de/api/interpreter?data=%5Bout%3Ajson%5D%5Btimeout%3A5%5D%3B%0Aarea%283602784842%29%3B%0Arel%28pivot%29%3B%0A%2F%2F%20print%20results%0Aout%20body%20geom%3B%0A';
 fetch(url_city).then(value => {
 	value.json().then(value => {
         var cityJson = value.elements[0].members;
-        var cityFeature = ({
-            coordinates: new  ol.geom.MultiPolygon({
+//		featuresCity = (new ol.format.GeoJSON()).readFeatures(cityJson);
 
-            })
-        });
-		var cityPolygon = (new ol.format.GeoJSON()).readFeatures(cityFeature);
 
-	});
+        bbox = value.elements[0].bounds.minlon 
+            + "," + value.elements[0].bounds.minlat
+            + "," + value.elements[0].bounds.maxlon
+            + "," + value.elements[0].bounds.maxlat;
+    });
 }, error => { console.log(error) });
-*/
 
-// TODO: use min/max lon/lat from overpass API
-var url = 'https://api.opensensemap.org/statistics/idw?bbox=9.118815,47.653129,9.228427,47.698786&phenomenon=Temperatur&gridType=hex&cellWidth=2';
+// TODO: use bbox from overpass API 9.0853854,47.6539842,9.2179906,47.7627374
+var url = 'https://api.opensensemap.org/statistics/idw?bbox=9.0853854,47.6539842,9.2179906,47.7627374&phenomenon=Temperatur&gridType=hex&cellWidth=0.5';
 fetch(url).then(value => {
     value.json().then(value => {
         var featureJson = value.data.featureCollection;
+        var featuresHex = (new ol.format.GeoJSON()).readFeatures(featureJson, {
+            dataProjection: 'EPSG:4326',
+            featureProjection: map.getView().getProjection()
+        });
 /*
         var features;
         featuresCity.forEach(function (f, i) {
@@ -92,7 +96,9 @@ fetch(url).then(value => {
         });
 */
         var vectorLayer = new ol.layer.Vector({
-            source: vectorSourceHEX,
+            source: new ol.source.Vector({
+                features: featuresHex,
+            })
 //            style: GeoStyleFunc
         });
 
