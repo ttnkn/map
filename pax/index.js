@@ -85,13 +85,12 @@ var url = 'https://api.opensensemap.org/statistics/idw?bbox=9.118815,47.653129,9
 fetch(url).then(value => {
     value.json().then(value => {
         var featureJson = value.data.featureCollection;
-        var features = (new ol.format.GeoJSON()).readFeatures(featureJson);
-
-        var vectorSourceHEX = new ol.source.Vector({
-            features: features,
-            projection: ol.proj.get('EPSG:4326')
+/*
+        var features;
+        featuresCity.forEach(function (f, i) {
+            features[i] = turf.intersect(f, featuresHex);
         });
-
+*/
         var vectorLayer = new ol.layer.Vector({
             source: vectorSourceHEX,
 //            style: GeoStyleFunc
