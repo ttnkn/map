@@ -5,7 +5,7 @@ var GeoStyle = {
 //            anchorXUnits: 'fraction',
 //            anchorYUnits: 'pixels',
             src: '../img/bike.png',
-            scale: 0.075,
+            scale: 0.08,
         })
     }),
     'Circle': new ol.style.Circle({
